@@ -1,5 +1,6 @@
 fastapi==0.115.0
 uvicorn==0.30.6
+gunicorn==22.0.0
 requests==2.32.3
 pdfplumber==0.11.4
 langchain-community==0.2.16
@@ -9,3 +10,4 @@ google-generativeai==0.8.2
 tenacity==8.5.0
 python-jose[cryptography]==3.3.0
 pillow==10.4.0
+langchain-core==0.2.38
