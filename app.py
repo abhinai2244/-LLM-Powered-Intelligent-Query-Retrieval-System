@@ -6,7 +6,7 @@ import requests
 import tempfile
 import os
 from urllib.parse import urlparse
-from querier import process_query
+from querier import process_query, process_query_with_text
 from indexer import load_and_index
 from langchain_core.documents import Document
 from google.api_core.exceptions import ResourceExhausted
@@ -71,6 +71,9 @@ async def run_query(request: QueryRequest, token: str = Depends(verify_token)):
             try:
                 docs = load_and_index(file_path)
                 text_cache[url] = "\n".join([doc.page_content for doc in docs])
+                # Log extracted text for debugging
+                with open(f"temp_files/extracted_text_{urlparse(url).path.split('/')[-1]}.txt", "w") as f:
+                    f.write(text_cache[url])
             except Exception as e:
                 text_cache[url] = None
                 print(f"Failed to extract text for {url}: {str(e)}")
@@ -81,7 +84,6 @@ async def run_query(request: QueryRequest, token: str = Depends(verify_token)):
                 try:
                     # Use cached text if available
                     if text_cache.get(url):
-                        from querier import process_query_with_text
                         result = process_query_with_text(text_cache[url], question)
                         answer = result["llm_response"]["raw_answer"]
                     else:
@@ -104,3 +106,15 @@ async def run_query(request: QueryRequest, token: str = Depends(verify_token)):
             if os.path.exists(file_path):
                 os.remove(file_path)
     return {"answers": answers}
+
+if __name__ == "__main__":
+    import uvicorn
+    # Use environment variable PORT for Render, default to 8000 locally
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        timeout_keep_alive=30,
+        log_config=None  # Use our logging config
+    )
